@@ -1,0 +1,563 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<model name="Sars_Cov_2_NK" xmlns="http://www.cellml.org/cellml/1.1#" xmlns:cellml="http://www.cellml.org/cellml/1.1#" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <import xlink:href="../Models/Vav Model_High.cellml">
+        <component component_ref="vav_activation" name="vav_activation"/>
+        <component component_ref="vav_inhibition" name="vav_inhibition"/>
+    </import>
+    <import xlink:href="../Models/Rac_PAK Model.cellml">
+        <component component_ref="RacPAK" name="RacPAK"/>
+    </import>
+    <import xlink:href="../Models/hatakeyama_2003_noRPnoAkt.cellml">
+        <component component_ref="geometry" name="geometry"/>
+        <component component_ref="MEK" name="MEK"/>
+        <component component_ref="ERK" name="ERK"/>
+    </import>
+    <!--
+*******************************************************
+***         U   N   I   T   S                       ***
+*******************************************************
+-->
+    <units name="s">
+        <unit units="second"/>
+    </units>
+    <units name="uM">
+        <unit prefix="micro" units="mole"/>
+        <unit exponent="-1" units="liter"/>
+    </units>
+    <units name="per_s">
+        <unit exponent="-1" units="s"/>
+    </units>
+    <units name="uM_per_s">
+        <unit units="uM"/>
+        <unit exponent="-1" units="s"/>
+    </units>
+    <units name="per_uM_per_s">
+        <unit exponent="-1" units="uM"/>
+        <unit exponent="-1" units="s"/>
+    </units>
+    <!--
+*********************************************************
+***       C   O   M   P   O   N   E   N   T   S       ***
+*********************************************************
+-->
+    <component name="environment">
+        <variable name="t" public_interface="out" units="second"/>
+    </component>
+    <connection>
+        <map_components component_1="geometry" component_2="environment"/>
+        <map_variables variable_1="t" variable_2="t"/>
+    </connection>
+    <connection>
+        <map_components component_1="environment" component_2="vav_activation"/>
+        <map_variables variable_1="t" variable_2="t"/>
+    </connection>
+    <connection>
+        <map_components component_1="environment" component_2="vav_inhibition"/>
+        <map_variables variable_1="t" variable_2="t"/>
+    </connection>
+    <!--************************
+***   pvav_Rac_PAK   ***
+************************-->
+    <component name="pvav_Rac_PAK">
+        <variable name="t" public_interface="in" units="second"/>
+        <variable name="J21" public_interface="in" units="uM_per_s"/>
+        <variable name="J23" public_interface="in" units="uM_per_s"/>
+        <variable name="pVav" public_interface="in" units="uM"/>
+        <variable initial_value="4" name="RacGDP" public_interface="in" units="uM"/>
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+                <eq/>
+                <apply>
+                    <diff/>
+                    <bvar>
+                        <ci>t</ci>
+                    </bvar>
+                    <ci>RacGDP</ci>
+                </apply>
+                <apply>
+                    <plus/>
+                    <apply>
+                        <minus/>
+                        <ci>J21</ci>
+                    </apply>
+                    <ci>J23</ci>
+                </apply>
+            </apply>
+        </math>
+    </component>
+    <connection>
+        <map_components component_1="environment" component_2="pvav_Rac_PAK"/>
+        <map_variables variable_1="t" variable_2="t"/>
+    </connection>
+    <connection>
+        <map_components component_1="RacPAK" component_2="environment"/>
+        <map_variables variable_1="t" variable_2="t"/>
+    </connection>
+    <connection>
+        <map_components component_1="pvav_Rac_PAK" component_2="RacPAK"/>
+        <map_variables variable_1="RacGDP" variable_2="RacGDP"/>
+        <map_variables variable_1="J21" variable_2="J21"/>
+        <map_variables variable_1="J23" variable_2="J23"/>
+    </connection>
+    <connection>
+        <map_components component_1="pvav_Rac_PAK" component_2="vav_activation"/>
+        <map_variables variable_1="pVav" variable_2="pVav"/>
+    </connection>
+    <!--********************
+***   PAK_mapk   ***
+********************-->
+    <component name="PAK_MEK">
+        <variable name="t" public_interface="in" units="second"/>
+        <variable name="J28" units="uM_per_s"/>
+        <variable name="J30" units="uM_per_s"/>
+        <variable name="J32" units="uM_per_s"/>
+        <variable name="J34" units="uM_per_s"/>
+        <!--Estimation start-->
+        <variable initial_value="0.00047" name="k_f28" units="per_s"/>
+        <variable initial_value="0.000479" name="K_28" units="uM"/>
+        <variable initial_value="0.00047" name="k_f30" units="per_s"/>
+        <variable initial_value="10.317" name="K_30" units="uM"/>
+        <variable initial_value="0.058" name="k_f32" units="per_s"/>
+        <variable initial_value="2.2" name="K_32" units="uM"/>
+        <variable initial_value="0.058" name="k_f34" units="per_s"/>
+        <variable initial_value="0.06" name="K_34" units="uM"/>
+        <!--Estimation end-->
+        <variable name="PAKa" public_interface="in" units="uM"/>
+        <variable initial_value="0" name="MEKP" units="uM"/>
+        <variable initial_value="0" name="MEKPP" units="uM"/>
+        <variable name="MEK" public_interface="in" units="uM"/>
+        <variable initial_value="1" name="PP2A" units="uM"/>
+        <variable name="J_MEK" public_interface="in" units="uM_per_s"/>
+        <variable name="J_MEKPP" public_interface="in" units="uM_per_s"/>
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+                <eq/>
+                <ci>J28</ci>
+                <apply>
+                    <divide/>
+                    <apply>
+                        <times/>
+                        <ci>k_f28</ci>
+                        <ci>PAKa</ci>
+                        <ci>MEK</ci>
+                    </apply>
+                    <apply>
+                        <plus/>
+                        <apply>
+                            <times/>
+                            <ci>K_28</ci>
+                            <apply>
+                                <plus/>
+                                <cn cellml:units="dimensionless">1</cn>
+                                <apply>
+                                    <divide/>
+                                    <ci>MEKP</ci>
+                                    <ci>K_30</ci>
+                                </apply>
+                            </apply>
+                        </apply>
+                        <ci>MEK</ci>
+                    </apply>
+                </apply>
+            </apply>
+            <apply>
+                <eq/>
+                <ci>J30</ci>
+                <apply>
+                    <divide/>
+                    <apply>
+                        <times/>
+                        <ci>k_f30</ci>
+                        <ci>PAKa</ci>
+                        <ci>MEKP</ci>
+                    </apply>
+                    <apply>
+                        <plus/>
+                        <apply>
+                            <times/>
+                            <ci>K_30</ci>
+                            <apply>
+                                <plus/>
+                                <cn cellml:units="dimensionless">1</cn>
+                                <apply>
+                                    <divide/>
+                                    <ci>MEK</ci>
+                                    <ci>K_28</ci>
+                                </apply>
+                            </apply>
+                        </apply>
+                        <ci>MEKP</ci>
+                    </apply>
+                </apply>
+            </apply>
+            <apply>
+                <eq/>
+                <ci>J32</ci>
+                <apply>
+                    <divide/>
+                    <apply>
+                        <times/>
+                        <ci>k_f32</ci>
+                        <ci>PP2A</ci>
+                        <ci>MEKP</ci>
+                    </apply>
+                    <apply>
+                        <plus/>
+                        <apply>
+                            <times/>
+                            <ci>K_32</ci>
+                            <apply>
+                                <plus/>
+                                <cn cellml:units="dimensionless">1</cn>
+                                <apply>
+                                    <divide/>
+                                    <ci>MEKPP</ci>
+                                    <ci>K_34</ci>
+                                </apply>
+                            </apply>
+                        </apply>
+                        <ci>MEKP</ci>
+                    </apply>
+                </apply>
+            </apply>
+            <apply>
+                <eq/>
+                <ci>J34</ci>
+                <apply>
+                    <divide/>
+                    <apply>
+                        <times/>
+                        <ci>k_f34</ci>
+                        <ci>PP2A</ci>
+                        <ci>MEKPP</ci>
+                    </apply>
+                    <apply>
+                        <plus/>
+                        <apply>
+                            <times/>
+                            <ci>K_34</ci>
+                            <apply>
+                                <plus/>
+                                <cn cellml:units="dimensionless">1</cn>
+                                <apply>
+                                    <divide/>
+                                    <ci>MEKP</ci>
+                                    <ci>K_32</ci>
+                                </apply>
+                            </apply>
+                        </apply>
+                        <ci>MEKPP</ci>
+                    </apply>
+                </apply>
+            </apply>
+            <apply>
+                <eq/>
+                <ci>J_MEKPP</ci>
+                <apply>
+                    <minus/>
+                    <ci>J30</ci>
+                    <ci>J34</ci>
+                </apply>
+            </apply>
+            <apply>
+                <eq/>
+                <apply>
+                    <diff/>
+                    <bvar>
+                        <ci>t</ci>
+                    </bvar>
+                    <ci>MEK</ci>
+                </apply>
+                <apply>
+                    <plus/>
+                    <apply>
+                        <minus/>
+                        <ci>J_MEK</ci>
+                        <ci>J28</ci>
+                    </apply>
+                    <ci>J32</ci>
+                </apply>
+            </apply>
+            <apply>
+                <eq/>
+                <apply>
+                    <diff/>
+                    <bvar>
+                        <ci>t</ci>
+                    </bvar>
+                    <ci>MEKP</ci>
+                </apply>
+                <apply>
+                    <plus/>
+                    <apply>
+                        <minus/>
+                        <apply>
+                            <minus/>
+                            <ci>J28</ci>
+                            <ci>J30</ci>
+                        </apply>
+                        <ci>J32</ci>
+                    </apply>
+                    <ci>J34</ci>
+                </apply>
+            </apply>
+            <!--ode(MEKPP, t) = J30-J34;-->
+            <apply>
+                <eq/>
+                <apply>
+                    <diff/>
+                    <bvar>
+                        <ci>t</ci>
+                    </bvar>
+                    <ci>MEKPP</ci>
+                </apply>
+                <ci>J_MEKPP</ci>
+            </apply>
+        </math>
+    </component>
+    <connection>
+        <map_components component_1="PAK_MEK" component_2="environment"/>
+        <map_variables variable_1="t" variable_2="t"/>
+    </connection>
+    <connection>
+        <map_components component_1="PAK_MEK" component_2="RacPAK"/>
+        <map_variables variable_1="PAKa" variable_2="PAKa"/>
+    </connection>
+    <connection>
+        <map_components component_1="PAK_MEK" component_2="geometry"/>
+        <map_variables variable_1="MEK" variable_2="MEK"/>
+        <map_variables variable_1="J_MEK" variable_2="J_MEK"/>
+        <map_variables variable_1="J_MEKPP" variable_2="J_MEKPP"/>
+    </connection>
+    <connection>
+        <map_components component_1="PAK_MEK" component_2="MEK"/>
+        <map_variables variable_1="J_MEKPP" variable_2="J_MEKPP"/>
+    </connection>
+    <!--**************************
+***   ERKPP_cytokine   ***
+**************************-->
+    <component name="ERKPPtranslocation">
+        <variable name="t" public_interface="in" units="s"/>
+        <variable name="J44" units="uM_per_s"/>
+        <variable initial_value="0.0026" name="k_f44" units="per_s"/>
+        <variable name="J_ERKPP" public_interface="in" units="uM_per_s"/>
+        <variable name="ERKPP" public_interface="in" units="uM"/>
+        <variable initial_value="0" name="ERKPP_n" public_interface="out" units="uM"/>
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+                <eq/>
+                <ci>J44</ci>
+                <apply>
+                    <times/>
+                    <ci>k_f44</ci>
+                    <ci>ERKPP</ci>
+                </apply>
+            </apply>
+            <apply>
+                <eq/>
+                <apply>
+                    <diff/>
+                    <bvar>
+                        <ci>t</ci>
+                    </bvar>
+                    <ci>ERKPP</ci>
+                </apply>
+                <apply>
+                    <minus/>
+                    <ci>J_ERKPP</ci>
+                    <ci>J44</ci>
+                </apply>
+            </apply>
+        </math>
+    </component>
+    <connection>
+        <map_components component_1="ERKPPtranslocation" component_2="geometry"/>
+        <map_variables variable_1="J_ERKPP" variable_2="J_ERKPP"/>
+    </connection>
+    <connection>
+        <map_components component_1="ERK" component_2="ERKPPtranslocation"/>
+        <map_variables variable_1="ERKPP" variable_2="ERKPP"/>
+    </connection>
+    <component name="ERKPPcytokine">
+        <variable name="t" public_interface="in" units="s"/>
+        <variable name="J44" units="uM_per_s"/>
+        <variable name="J45" public_interface="in" units="uM_per_s"/>
+        <variable name="J46" units="uM_per_s"/>
+        <!--var J47: uM_per_s {pub: in};
+var J48: uM_per_s;-->
+        <variable name="J49" public_interface="in" units="uM_per_s"/>
+        <variable name="J50" units="uM_per_s"/>
+        <variable name="ERKPP_n" public_interface="in" units="uM"/>
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+                <eq/>
+                <apply>
+                    <diff/>
+                    <bvar>
+                        <ci>t</ci>
+                    </bvar>
+                    <ci>ERKPP_n</ci>
+                </apply>
+                <apply>
+                    <minus/>
+                    <apply>
+                        <minus/>
+                        <ci>J44</ci>
+                        <ci>J45</ci>
+                    </apply>
+                    <ci>J49</ci>
+                </apply>
+            </apply>
+        </math>
+        <!--ode(ERKPP_n, t) = J44-J45-J47-J49;-->
+    </component>
+    <component name="ERKPPTNFa">
+        <variable name="t" public_interface="in" units="s"/>
+        <variable name="J45" public_interface="out" units="uM_per_s"/>
+        <variable name="J46" units="uM_per_s"/>
+        <variable initial_value="0.0004" name="k_f45" units="per_s"/>
+        <variable initial_value="0.0000653" name="k_f46" units="per_s"/>
+        <variable name="ERKPP_n" public_interface="in" units="uM"/>
+        <variable initial_value="0" name="TNFa" units="uM"/>
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+                <eq/>
+                <ci>J45</ci>
+                <apply>
+                    <times/>
+                    <ci>k_f45</ci>
+                    <ci>ERKPP_n</ci>
+                </apply>
+            </apply>
+            <apply>
+                <eq/>
+                <ci>J46</ci>
+                <apply>
+                    <times/>
+                    <ci>k_f46</ci>
+                    <ci>TNFa</ci>
+                </apply>
+            </apply>
+            <apply>
+                <eq/>
+                <apply>
+                    <diff/>
+                    <bvar>
+                        <ci>t</ci>
+                    </bvar>
+                    <ci>TNFa</ci>
+                </apply>
+                <apply>
+                    <minus/>
+                    <ci>J45</ci>
+                    <ci>J46</ci>
+                </apply>
+            </apply>
+        </math>
+    </component>
+    <!--def comp ERKPPGMCSF as
+ var t: s {pub: in};
+ var J47: uM_per_s {pub: out};
+ var J48: uM_per_s;
+ var k_f47: per_s {init: 0.1};
+ var k_f48: per_s {init: 0.001};
+ var ERKPP_n: uM {pub: in};
+ var GMCSF: uM {init: 0};-->
+    <!-- J47 = k_f47*ERKPP_n;
+ J48 = k_f48*GMCSF;
+ ode(GMCSF, t) = J47-J48;
+enddef;-->
+    <component name="ERKPPIFNy">
+        <variable name="t" public_interface="in" units="s"/>
+        <variable name="J49" public_interface="out" units="uM_per_s"/>
+        <variable name="J50" units="uM_per_s"/>
+        <variable initial_value="0.0004" name="k_f49" units="per_s"/>
+        <variable initial_value="0.0531" name="k_f50" units="per_s"/>
+        <variable name="ERKPP_n" public_interface="in" units="uM"/>
+        <variable initial_value="0" name="IFNy" units="uM"/>
+        <math xmlns="http://www.w3.org/1998/Math/MathML">
+            <apply>
+                <eq/>
+                <ci>J49</ci>
+                <apply>
+                    <times/>
+                    <ci>k_f49</ci>
+                    <ci>ERKPP_n</ci>
+                </apply>
+            </apply>
+            <apply>
+                <eq/>
+                <ci>J50</ci>
+                <apply>
+                    <times/>
+                    <ci>k_f50</ci>
+                    <ci>IFNy</ci>
+                </apply>
+            </apply>
+            <apply>
+                <eq/>
+                <apply>
+                    <diff/>
+                    <bvar>
+                        <ci>t</ci>
+                    </bvar>
+                    <ci>IFNy</ci>
+                </apply>
+                <apply>
+                    <minus/>
+                    <ci>J49</ci>
+                    <ci>J50</ci>
+                </apply>
+            </apply>
+        </math>
+    </component>
+    <connection>
+        <map_components component_1="environment" component_2="ERKPPcytokine"/>
+        <map_variables variable_1="t" variable_2="t"/>
+    </connection>
+    <connection>
+        <map_components component_1="environment" component_2="ERKPPIFNy"/>
+        <map_variables variable_1="t" variable_2="t"/>
+    </connection>
+    <!--def map between environment and ERKPPGMCSF for
+  vars t and t;
+enddef;-->
+    <connection>
+        <map_components component_1="environment" component_2="ERKPPTNFa"/>
+        <map_variables variable_1="t" variable_2="t"/>
+    </connection>
+    <connection>
+        <map_components component_1="environment" component_2="ERKPPtranslocation"/>
+        <map_variables variable_1="t" variable_2="t"/>
+    </connection>
+    <connection>
+        <map_components component_1="ERK" component_2="ERKPPtranslocation"/>
+        <map_variables variable_1="ERKPP" variable_2="ERKPP"/>
+    </connection>
+    <connection>
+        <map_components component_1="ERKPPtranslocation" component_2="ERKPPcytokine"/>
+        <map_variables variable_1="ERKPP_n" variable_2="ERKPP_n"/>
+    </connection>
+    <connection>
+        <map_components component_1="ERKPPtranslocation" component_2="ERKPPIFNy"/>
+        <map_variables variable_1="ERKPP_n" variable_2="ERKPP_n"/>
+    </connection>
+    <!--def map between ERKPPtranslocation and ERKPPGMCSF for
+  vars ERKPP_n and ERKPP_n;
+enddef;-->
+    <connection>
+        <map_components component_1="ERKPPtranslocation" component_2="ERKPPTNFa"/>
+        <map_variables variable_1="ERKPP_n" variable_2="ERKPP_n"/>
+    </connection>
+    <connection>
+        <map_components component_1="ERKPPcytokine" component_2="ERKPPTNFa"/>
+        <map_variables variable_1="J45" variable_2="J45"/>
+    </connection>
+    <!--def map between ERKPPcytokine and ERKPPGMCSF for
+  vars J47 and J47;
+enddef;-->
+    <connection>
+        <map_components component_1="ERKPPcytokine" component_2="ERKPPIFNy"/>
+        <map_variables variable_1="J49" variable_2="J49"/>
+    </connection>
+</model>
